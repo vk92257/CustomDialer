@@ -1,56 +1,71 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#59777777">
+    android:background="@color/lgv_back_color"
+    android:keepScreenOn="true"
+    android:paddingStart="@dimen/thirty_dp">
 
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:layout_below="@+id/talking">
+        android:layout_height="@dimen/three_hund"
+        android:layout_marginTop="@dimen/sixty_five_dp">
 
-        <RelativeLayout
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <TextView
-                android:id="@+id/callername"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentTop="true"
-                android:layout_centerInParent="true"
-                android:layout_margin="5dp"
-                android:text="User Name"
-                android:textColor="@color/white"
-                android:textSize="20sp" />
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/callTime"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@+id/callername"
-                android:layout_centerInParent="true"
-                android:layout_marginStart="20dp"
-                android:layout_marginTop="5dp"
-                android:text=""
+                android:text="incomming"
+                android:textSize="@dimen/nineteen_sp"
                 android:textColor="@color/white" />
-        </RelativeLayout>
+
+            <TextView
+                android:paddingEnd="@dimen/fifty_dp"
+                android:maxLines="2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/fifteen_dp"
+                android:layout_marginBottom="@dimen/five_dp"
+                android:text="Unknown"
+                android:textColor="@color/white"
+                android:textSize="@dimen/fifty_sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:paddingEnd="@dimen/fifty_dp"
+                android:maxLines="2"
+                android:id="@+id/callername"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/fifteen_dp"
+                android:layout_marginBottom="@dimen/five_dp"
+                android:text="+91 1234456789"
+                android:textColor="@color/white"
+                android:textSize="@dimen/twenty_two_dp" />
+
+
+        </LinearLayout>
     </FrameLayout>
 
     <FrameLayout
-        android:id="@+id/answerlayout"
+        android:id="@+id/inComingCallLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="20dp"
+        android:layout_marginBottom="@dimen/twenty_dp"
         android:visibility="gone">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
+            android:visibility="visible"
             android:weightSum="2">
 
             <RelativeLayout
@@ -58,14 +73,17 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1">
 
-                <ImageView
-                    android:id="@+id/answerCall"
-                    android:layout_width="60dp"
-                    android:layout_height="60dp"
+                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/rejectCall"
+                    android:layout_width="@dimen/seventy_dp"
+                    android:layout_height="@dimen/seventy_dp"
                     android:layout_centerInParent="true"
-                    android:background="@drawable/shape_oval_white_green"
-                    android:padding="17dp"
-                    android:src="@drawable/ic_phone_black_24dp"
+                    android:background="@drawable/shape_oval_red"
+                    android:elevation="@dimen/twenty_dp"
+                    android:padding="@dimen/ten_dp"
+                    android:src="@drawable/ic_phone_hangup"
+                    app:backgroundTint="#FA0404"
+                    app:fabCustomSize="@dimen/seventy_dp"
                     app:tint="@color/white" />
             </RelativeLayout>
 
@@ -74,25 +92,28 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1">
 
-                <ImageView
-                    android:id="@+id/rejectcall"
-                    android:layout_width="60dp"
-                    android:layout_height="60dp"
+                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/answerCall"
+                    android:layout_width="@dimen/seventy_dp"
+                    android:layout_height="@dimen/seventy_dp"
                     android:layout_centerInParent="true"
-                    android:background="@drawable/shape_oval_red"
-                    android:padding="13dp"
-                    android:src="@drawable/ic_phone_hangup"
+                    android:elevation="@dimen/twenty_dp"
+                    android:padding="@dimen/ten_dp"
+                    android:src="@drawable/ic_phone_black_24dp"
+                    app:backgroundTint="@color/green"
+                    app:fabCustomSize="@dimen/seventy_dp"
                     app:tint="@color/white" />
             </RelativeLayout>
+
+
         </LinearLayout>
     </FrameLayout>
 
     <FrameLayout
-        android:id="@+id/CallerLayout"
+        android:id="@+id/runningCallLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:background="#33000000"
         android:visibility="visible">
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -102,69 +123,94 @@
 
 
             <ToggleButton
+                android:layout_marginEnd="@dimen/twenty_dp"
                 android:id="@+id/toggle_speaker"
-                android:layout_width="60dp"
-                android:layout_height="60dp"
-                android:layout_toStartOf="@+id/Endcall"
-                android:layout_toLeftOf="@+id/Endcall"
+                android:layout_width="@dimen/seventy_five_dp"
+                android:layout_height="@dimen/seventy_five_dp"
+                android:layout_toStartOf="@+id/endCall"
+                android:layout_toLeftOf="@+id/endCall"
                 android:background="@drawable/call_speaker_toggle_background"
                 android:textOff="@null"
                 android:textOn="@null"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@+id/toggle_hold_switch"
-               />
+                app:layout_constraintStart_toEndOf="@+id/toggle_hold_switch" />
 
             <ToggleButton
+                android:layout_marginEnd="@dimen/twenty_dp"
                 android:id="@+id/toggle_mic"
-                android:layout_width="60dp"
-                android:layout_height="60dp"
-                android:layout_toEndOf="@+id/Endcall"
+                android:layout_width="@dimen/seventy_five_dp"
+                android:layout_height="@dimen/seventy_five_dp"
+                android:layout_toEndOf="@+id/endCall"
                 android:background="@drawable/call_mic_toggle_background"
                 android:textOff="@null"
                 android:textOn="@null"
+                android:visibility="visible"
                 app:layout_constraintEnd_toStartOf="@+id/toggle_hold_switch"
                 app:layout_constraintStart_toStartOf="parent" />
 
 
-            <ImageView
-                android:id="@+id/Endcall"
-                android:layout_width="60dp"
-                android:layout_height="60dp"
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/endCall"
+                android:layout_width="@dimen/seventy_dp"
+                android:layout_height="@dimen/seventy_dp"
                 android:layout_alignParentBottom="true"
                 android:layout_centerHorizontal="true"
-                android:background="@drawable/shape_oval_red"
-                android:padding="10dp"
+                android:layout_marginBottom="@dimen/sixty_dp"
+                android:elevation="@dimen/twenty_dp"
+                android:padding="@dimen/ten_dp"
                 android:src="@drawable/ic_phone_hangup"
-                android:tint="@color/white"
+                app:backgroundTint="#FA0404"
+                app:fabCustomSize="@dimen/seventy_dp"
+                android:layout_marginEnd="@dimen/twenty_dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent" />
-            <!--            android:src="@drawable/ic_call_end_black_24dp"-->
+                app:layout_constraintStart_toStartOf="parent"
+                app:tint="@color/white" />
 
 
             <ToggleButton
-                android:visibility="gone"
-                android:id="@+id/toggle_camera"
-                android:layout_width="60dp"
-                android:layout_height="60dp"
-                android:layout_alignParentStart="true"
-                android:background="@drawable/call_cam_toggle_background"
-                android:textOff="@null"
-                android:textOn="@null" />
-
-
-            <ToggleButton
-                android:layout_marginBottom="40dp"
+                android:layout_marginEnd="@dimen/twenty_dp"
                 android:id="@+id/toggle_hold_switch"
-                android:layout_width="60dp"
-                android:layout_height="60dp"
+                android:layout_width="@dimen/seventy_five_dp"
+                android:layout_height="@dimen/seventy_five_dp"
+                android:layout_marginBottom="@dimen/two_hund_dp"
                 android:background="@drawable/call_toggle_cam_toggle_background"
                 android:textOff="@null"
                 android:textOn="@null"
-                app:layout_constraintBottom_toTopOf="@+id/Endcall"
+                android:visibility="visible"
+                app:layout_constraintBottom_toTopOf="@+id/endCall"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent" />
 
+
+            <ImageView
+                android:visibility="visible"
+                android:id="@+id/icDialPad"
+                android:layout_width="@dimen/seventy_five_dp"
+                android:layout_height="@dimen/seventy_five_dp"
+                android:layout_alignParentTop="true"
+                android:layout_centerInParent="true"
+                android:layout_marginTop="@dimen/thirty_five_dp"
+                android:background="@drawable/shape_oval_transparent"
+                android:src="@drawable/ic_dialpad"
+                app:layout_constraintEnd_toStartOf="@+id/toggle_hold_switch"
+                app:layout_constraintStart_toEndOf="@+id/toggle_mic"
+                app:layout_constraintTop_toBottomOf="@+id/toggle_mic" />
+
+
+            <ImageView
+                android:visibility="visible"
+                android:layout_marginTop="@dimen/thirty_five_dp"
+                android:id="@+id/icAddCall"
+                android:layout_width="@dimen/seventy_five_dp"
+                android:layout_height="@dimen/seventy_five_dp"
+                android:layout_alignParentTop="true"
+                android:layout_centerInParent="true"
+                android:background="@drawable/shape_oval_transparent"
+                android:src="@drawable/ic_add_call"
+                app:layout_constraintEnd_toStartOf="@+id/toggle_speaker"
+                app:layout_constraintStart_toEndOf="@+id/toggle_hold_switch"
+                app:layout_constraintTop_toBottomOf="@+id/toggle_hold_switch" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -172,13 +218,12 @@
 
 
     <ImageView
-        android:id="@+id/talking"
-        android:layout_width="120dp"
-        android:layout_height="120dp"
+        android:layout_width="@dimen/one_twenty_dp"
+        android:layout_height="@dimen/one_twenty_dp"
         android:layout_alignParentTop="true"
         android:layout_centerInParent="true"
-        android:layout_marginTop="120dp"
-        android:src="@drawable/user_test"
-        android:visibility="visible" />
+        android:layout_marginTop="@dimen/one_twenty_dp"
+        android:src="@drawable/ic_launcher_background"
+        android:visibility="gone" />
 
 </RelativeLayout>

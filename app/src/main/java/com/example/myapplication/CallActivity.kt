@@ -1,13 +1,13 @@
 package com.example.myapplication
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.media.AudioManager
 import android.media.MediaPlayer
-import android.os.Bundle
-import android.os.Handler
+import android.os.*
 import android.telecom.Call
 import android.telecom.CallAudioState
 import android.util.Log
@@ -15,154 +15,140 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.ToggleButton
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import com.example.myapplication.databinding.ActivityCallBinding
 import com.example.myapplication.listener.CallEventListener
 import java.util.*
 
 
 class CallActivity : AppCompatActivity(), CallEventListener {
-
     private var isOnHold: Boolean? = true
-    private var isCallStarted: Boolean = false
     private var mp: MediaPlayer? = null
-    private var inGoingCall: android.widget.FrameLayout? = null
-    private var inComingCall: android.widget.FrameLayout? = null
-
-    private var talking: ImageView? = null
-    private var toggleSpeaker: ToggleButton? = null
-    private var toggleCamera: ToggleButton? = null
-    private var toggleMic: ToggleButton? = null
-    private var toggleCameraSwitch: ToggleButton? = null
-
-    var answer: ImageView? = null
-    var hangup: ImageView? = null
-    var hangup2: ImageView? = null
-
+    private var vibrator: Vibrator? = null
     private var number: String? = null
     private val TAG = CallActivity::class.java
     private var isSpeakerOn = true
-    private var isMicrophoneOn = true
+    private var proximityWakeLock: PowerManager.WakeLock? = null
+    private var _binding: ActivityCallBinding? = null
+    private val binding get() = _binding
 
-
+    @SuppressLint("SetTextI18n")
+    @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_call)
+
+        if (_binding == null)
+            _binding = ActivityCallBinding.inflate(layoutInflater)
+        setContentView(_binding!!.root)
+
         OngoingCallObject.registerCallEventListener(this)
-        toggleSpeaker = findViewById(R.id.toggle_speaker)
-        toggleCamera = findViewById(R.id.toggle_camera)
-        toggleCameraSwitch = findViewById(R.id.toggle_hold_switch)
-        talking = findViewById(R.id.talking)
-        toggleMic = findViewById(R.id.toggle_mic)
-        inComingCall = findViewById(R.id.answerlayout)
-        inGoingCall = findViewById(R.id.CallerLayout)
-//
-        answer = findViewById<View>(R.id.answerCall) as ImageView
-        hangup = findViewById<View>(R.id.Endcall) as ImageView
-        hangup2 = findViewById<View>(R.id.rejectcall) as ImageView
-//        callInfo = findViewById<View>(R.id.callInfo) as TextView
-//        number = Objects.requireNonNull(intent.data!!.schemeSpecificPart)
+
+
         number = intent.data?.schemeSpecificPart
-
-
-        SetCallerName(number.toString())
-
-        answer!!.setOnClickListener {
-            OngoingCallObject!!.answer()
-//            CallService.calldata?.answer(VideoProfile.STATE_AUDIO_ONLY)
-            Log.e("TAG", "onCreate:  answer")
+        vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        setCallerName(number.toString())
+        if (OngoingCallObject.call?.state == Call.STATE_RINGING) {
+            binding!!.apply {
+                inComingCallLayout.visibility = View.VISIBLE
+                runningCallLayout.visibility = View.GONE
+                callTime.text = "incoming.."
+            }
+            val pattern = longArrayOf(0, 1500, 1500, 1500, 1500)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator!!.vibrate(
+                    VibrationEffect.createWaveform(
+                        pattern,
+                        VibrationEffect.CONTENTS_FILE_DESCRIPTOR
+                    )
+                );
+            }
+            startDialRinging()
         }
-        hangup!!.setOnClickListener {
-            Log.e("TAG", "onCreate:  hang up")
-//            CallService.calldata?.disconnect()
-//                ongoingCall!!.hangup()
-            OngoingCallObject.hangup()
-        }
-        hangup2!!.setOnClickListener {
-//            CallService.calldata?.disconnect()
-//                ongoingCall!!.hangup()
-            OngoingCallObject.hangup()
-        }
 
-        toggleCameraSwitch!!.setOnClickListener {
-            if (isOnHold == true) {
-                OngoingCallObject.call?.unhold()
-                isOnHold = false
-            } else {
-                OngoingCallObject.call?.hold()
-                isOnHold = true
+
+
+
+        binding!!.apply {
+            answerCall.setOnClickListener {
+                OngoingCallObject!!.answer()
+            }
+            endCall.setOnClickListener {
+
+                OngoingCallObject.hangup()
+            }
+            rejectCall.setOnClickListener {
+                OngoingCallObject.hangup()
+            }
+
+            toggleHoldSwitch.setOnClickListener {
+                if (isOnHold == true) {
+                    OngoingCallObject.call?.unhold()
+                    isOnHold = false
+                } else {
+                    OngoingCallObject.call?.hold()
+                    isOnHold = true
+                }
+            }
+            toggleSpeaker.setOnClickListener {
+                toggleSpeaker()
+            }
+            toggleMic.setOnClickListener {
+                toggleMicrophone()
             }
         }
-        toggleSpeaker?.setOnClickListener {
-            toggleSpeaker()
-        }
-        toggleMic?.setOnClickListener {
-            toggleMicrophone()
-        }
 
+
+    }
+
+
+    override fun onResume() {
+        super.onResume()
+        OngoingCallObject.registerCallEventListener(this)
     }
 
     val audioManager: AudioManager get() = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+    @RequiresApi(Build.VERSION_CODES.M)
     private fun toggleSpeaker() {
-
-        if(!isSpeakerOn)//speaker off
-        {
-            isSpeakerOn = true;
-            audioManager.setMode(AudioManager.MODE_NORMAL);
-            audioManager.setSpeakerphoneOn(true);
-            audioManager.setBluetoothScoOn(false);
+        audioManager.mode = AudioManager.MODE_IN_CALL;
+        isSpeakerOn = audioManager.isSpeakerphoneOn
+        val earPiece = CallAudioState.ROUTE_WIRED_OR_EARPIECE
+        val speaker = CallAudioState.ROUTE_SPEAKER
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+            CallService.instance?.setAudioRoute(if (isSpeakerOn) earPiece else speaker)
+        } else {
+            audioManager.isSpeakerphoneOn = !isSpeakerOn
         }
-        else
-        {
-            isSpeakerOn = false;
-            audioManager.setMode(AudioManager.MODE_IN_CALL);
-            audioManager.setSpeakerphoneOn(false);
-            audioManager.setBluetoothScoOn(true);
-        }
-
 
     }
 
+
     private fun toggleMicrophone() {
-        if (!audioManager.isMicrophoneMute()) {
-            audioManager.setMicrophoneMute(true);
-
-        } else {
-            audioManager.setMicrophoneMute(false);
-        }
-
+        audioManager.isMicrophoneMute = !audioManager.isMicrophoneMute
     }
 
     companion object {
-        fun start(context: Context , call: Call) {
+        @RequiresApi(Build.VERSION_CODES.M)
+        fun start(context: Context, call: Call) {
             val intent = Intent(context, CallActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
             intent.data = call.getDetails().getHandle()
-            Log.e("TAG", "start: " + intent.data)
             context.startActivity(intent)
         }
 
     }
 
-    private fun SetCallerName(callerID: String) {
-        val callerName = findViewById<View>(R.id.callername) as TextView
-        val callertime = findViewById<View>(R.id.callTime) as TextView
-        callerName.text = callerID + ""
-//        if (isOutgoing!!) {
-        if (true) {
-            callertime.text = "Calling..."
+    @SuppressLint("SetTextI18n")
+    private fun setCallerName(callerID: String) {
+        binding.apply {
+//            callername.text = callerID + ""
+//            callTime.text = "Calling..."
         }
     }
 
-    private fun CallUser() {
-        toggleMic!!.visibility = View.GONE
-        toggleCamera!!.visibility = View.GONE
 
-        talking!!.visibility = View.VISIBLE
-
-
-    }
-
-    fun StartDialRinging() {
+    private fun startDialRinging() {
         try {
             mp = MediaPlayer.create(applicationContext, R.raw.beep)
             mp!!.isLooping = true
@@ -173,80 +159,80 @@ class CallActivity : AppCompatActivity(), CallEventListener {
     }
 
 
-    fun stopRinging() {
+    private fun stopRinging() {
         if (mp != null && mp!!.isPlaying) {
             mp!!.stop()
         }
     }
 
-    private fun StartTimer() {
-        toggleMic!!.visibility = View.VISIBLE
-        val timer = findViewById<View>(R.id.callTime) as TextView
-        timer.text = "00:00"
-        val handler = Handler()
-        val runnable: Runnable = object : Runnable {
-            private val startTime = System.currentTimeMillis()
-            override fun run() {
-                while (true) {
-                    try {
-                        Thread.sleep(1000)
-                    } catch (e: InterruptedException) {
-                        e.printStackTrace()
-                    }
-                    handler.post {
-                        val millis = (System.currentTimeMillis() - startTime).toInt() / 1000
-                        val min = millis / 60
-                        val sec = millis % 60
-                        timer.text =
-                            (if (min < 10) "0$min" else min).toString() + ":" + if (sec < 10) "0$sec" else sec
-                    }
-                }
-            }
+    private val MINUTE_SECONDS = 60
+    private fun initProximitySensor() {
+        if (proximityWakeLock == null || proximityWakeLock?.isHeld == false) {
+            val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+            proximityWakeLock = powerManager.newWakeLock(
+                PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK,
+                "com.bjs.pdanative.ui.defaultdialer.pro:wake_lock"
+            )
+            proximityWakeLock!!.acquire(10 * MINUTE_SECONDS * 1000L)
         }
-        Thread(runnable).start()
     }
-
 
     override fun onDestroy() {
+        vibrator?.cancel()
+        stopRinging()
         OngoingCallObject.unRegisterCallEventListener()
         super.onDestroy()
+        if (_binding != null)
+            _binding = null
+        if (proximityWakeLock?.isHeld == true) {
+            proximityWakeLock!!.release()
+        }
+
     }
 
 
+    @RequiresApi(Build.VERSION_CODES.M)
+    override fun onBackPressed() {
+        super.onBackPressed()
+        if (OngoingCallObject.call?.state == Call.STATE_DIALING) {
+            OngoingCallObject.hangup()
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.M)
     override fun onGoingCallEvent(event: String) {
         when (event) {
             OngoingCallObject.STATE_CONNECTING -> {
 //                The initial state of an outgoing Call.
-                CallUser()
-
+                initProximitySensor()
             }
             OngoingCallObject.STATE_RINGING -> {
-//                The state of an incoming Call when ringing locally, but not yet connected.
-                inGoingCall?.visibility = View.GONE
-                inComingCall?.visibility = View.VISIBLE
             }
             OngoingCallObject.STATE_ACTIVE -> {
 //                The state of a Call when actively supporting conversation.
-                Log.e("TAG", "onGoingCallEvent:  STATE_ACTIVE ")
-                inGoingCall?.visibility = View.VISIBLE
-                inComingCall?.visibility = View.GONE
-                isOnHold = false
-                toggleCameraSwitch?.isChecked = false
-
-                if (!isCallStarted){
-                    StartTimer()
-                    isCallStarted = true
+                initProximitySensor()
+                binding!!.apply {
+                    inComingCallLayout.visibility = View.GONE
+                    runningCallLayout.visibility = View.VISIBLE
+                    toggleHoldSwitch.isChecked = false
+                    toggleMic.visibility = View.VISIBLE
+                    toggleHoldSwitch.visibility = View.VISIBLE
+                    icAddCall.visibility = View.VISIBLE
+                    icDialPad.visibility = View.VISIBLE
                 }
-
+                isOnHold = false
+                vibrator?.cancel()
+                stopRinging()
             }
             OngoingCallObject.STATE_DISCONNECTED -> {
                 finish()
             }
             OngoingCallObject.STATE_HOLDING -> {
+
 //                The state of a Call when in a holding state.
                 Log.e("TAG", "onGoingCallEvent:  STATE_HOLDING ")
                 isOnHold = true
-                toggleCameraSwitch?.isChecked = true
+                binding!!.toggleHoldSwitch.isChecked = true
             }
             OngoingCallObject.REJECT_REASON_DECLINED -> {
                 Log.e("TAG", "onGoingCallEvent:  REJECT_REASON_DECLINED ")
@@ -265,6 +251,14 @@ class CallActivity : AppCompatActivity(), CallEventListener {
 
             }
 
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    override fun onGoingCallInfo(time: String, number: String) {
+        binding.apply {
+//            callTime.text = time
+//            callername.text = number
         }
     }
 
