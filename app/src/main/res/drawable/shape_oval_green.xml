@@ -7,7 +7,7 @@
                 android:width="64dp"
                 android:height="64dp" />
             <solid
-                android:color="#A9FF80"/>
+                android:color="@color/green"/>
         </shape>
     </item>
 </selector>

@@ -1,8 +1,6 @@
 package com.example.myapplication
 
 import android.annotation.SuppressLint
-import android.app.Notification
-import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.media.AudioManager
@@ -10,22 +8,19 @@ import android.media.MediaPlayer
 import android.os.*
 import android.telecom.Call
 import android.telecom.CallAudioState
-import android.util.Log
 import android.view.View
-import android.widget.ImageView
-import android.widget.TextView
-import android.widget.ToggleButton
+import android.view.animation.AnimationUtils
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import com.example.myapplication.customView.OnTwowaySliderListener
 import com.example.myapplication.databinding.ActivityCallBinding
 import com.example.myapplication.listener.CallEventListener
-import java.util.*
 
 
-class CallActivity : AppCompatActivity(), CallEventListener {
+class CallActivity : AppCompatActivity(), CallEventListener, OnTwowaySliderListener {
     private var isOnHold: Boolean? = true
     private var mp: MediaPlayer? = null
-    private var vibrator: Vibrator? = null
+    private var vibration: Vibrator? = null
     private var number: String? = null
     private val TAG = CallActivity::class.java
     private var isSpeakerOn = true
@@ -43,20 +38,56 @@ class CallActivity : AppCompatActivity(), CallEventListener {
         setContentView(_binding!!.root)
 
         OngoingCallObject.registerCallEventListener(this)
-
-
         number = intent.data?.schemeSpecificPart
-        vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        vibration = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         setCallerName(number.toString())
         if (OngoingCallObject.call?.state == Call.STATE_RINGING) {
             binding!!.apply {
                 inComingCallLayout.visibility = View.VISIBLE
                 runningCallLayout.visibility = View.GONE
                 callTime.text = "incoming.."
+
+                val anim = AnimationUtils.loadAnimation(this@CallActivity, R.anim.zoomin_out)
+                anim.duration = 1500
+                zoomInRed.startAnimation(anim)
+                zoomIbGreen.startAnimation(anim)
+
+
+                sliderControlCostomized.listener = object : OnTwowaySliderListener {
+                    @RequiresApi(Build.VERSION_CODES.O)
+                    override fun onSliderMoveLeft() {
+                        OngoingCallObject.hangup()
+                        vibration!!.vibrate(
+                            VibrationEffect.createOneShot(
+                                100,
+                                VibrationEffect.DEFAULT_AMPLITUDE
+                            )
+                        );
+                    }
+
+                    @RequiresApi(Build.VERSION_CODES.O)
+                    override fun onSliderMoveRight() {
+                        OngoingCallObject.answer()
+                        vibration!!.vibrate(
+                            VibrationEffect.createOneShot(
+                                500,
+                                VibrationEffect.DEFAULT_AMPLITUDE
+                            )
+                        );
+                    }
+
+                    override fun onSliderLongPress() {
+
+                    }
+
+                }
+
             }
+
+
             val pattern = longArrayOf(0, 1500, 1500, 1500, 1500)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator!!.vibrate(
+                vibration!!.vibrate(
                     VibrationEffect.createWaveform(
                         pattern,
                         VibrationEffect.CONTENTS_FILE_DESCRIPTOR
@@ -64,20 +95,19 @@ class CallActivity : AppCompatActivity(), CallEventListener {
                 );
             }
             startDialRinging()
+        } else if (OngoingCallObject.call?.state == Call.STATE_ACTIVE) {
+            binding?.apply {
+                toggleMic.isEnabled = true
+                toggleHoldSwitch.isEnabled = true
+            }
         }
 
 
 
 
         binding!!.apply {
-            answerCall.setOnClickListener {
-                OngoingCallObject!!.answer()
-            }
             endCall.setOnClickListener {
 
-                OngoingCallObject.hangup()
-            }
-            rejectCall.setOnClickListener {
                 OngoingCallObject.hangup()
             }
 
@@ -141,9 +171,9 @@ class CallActivity : AppCompatActivity(), CallEventListener {
 
     @SuppressLint("SetTextI18n")
     private fun setCallerName(callerID: String) {
-        binding.apply {
-//            callername.text = callerID + ""
-//            callTime.text = "Calling..."
+        binding!!.apply {
+            callername.text = callerID + ""
+            callTime.text = "Calling..."
         }
     }
 
@@ -178,7 +208,7 @@ class CallActivity : AppCompatActivity(), CallEventListener {
     }
 
     override fun onDestroy() {
-        vibrator?.cancel()
+        vibration?.cancel()
         stopRinging()
         OngoingCallObject.unRegisterCallEventListener()
         super.onDestroy()
@@ -219,34 +249,30 @@ class CallActivity : AppCompatActivity(), CallEventListener {
                     toggleHoldSwitch.visibility = View.VISIBLE
                     icAddCall.visibility = View.VISIBLE
                     icDialPad.visibility = View.VISIBLE
+                    toggleMic.isEnabled = true
+                    toggleHoldSwitch.isEnabled = true
                 }
                 isOnHold = false
-                vibrator?.cancel()
+                vibration?.cancel()
                 stopRinging()
             }
             OngoingCallObject.STATE_DISCONNECTED -> {
                 finish()
             }
             OngoingCallObject.STATE_HOLDING -> {
-
-//                The state of a Call when in a holding state.
-                Log.e("TAG", "onGoingCallEvent:  STATE_HOLDING ")
+//               The state of a Call when in a holding state.
                 isOnHold = true
                 binding!!.toggleHoldSwitch.isChecked = true
             }
             OngoingCallObject.REJECT_REASON_DECLINED -> {
-                Log.e("TAG", "onGoingCallEvent:  REJECT_REASON_DECLINED ")
             }
             OngoingCallObject.STATE_DISCONNECTING -> {
-                Log.e("TAG", "onGoingCallEvent:  STATE_DISCONNECTING ")
 //                The state of a Call when the user has initiated a disconnection of the call, but the call has not yet been disconnected by the underlying ConnectionService.
             }
             OngoingCallObject.STATE_DIALING -> {
-                Log.e("TAG", "onGoingCallEvent:  STATE_DIALING ")
 //                The state of an outgoing Call when dialing the remote number, but not yet connected.
             }
             OngoingCallObject.STATE_NEW -> {
-                Log.e("TAG", "onGoingCallEvent:  STATE_NEW ")
 //                The state of an outgoing Call when dialing the remote number, but not yet connected.
 
             }
@@ -256,10 +282,26 @@ class CallActivity : AppCompatActivity(), CallEventListener {
 
     @RequiresApi(Build.VERSION_CODES.M)
     override fun onGoingCallInfo(time: String, number: String) {
-        binding.apply {
-//            callTime.text = time
-//            callername.text = number
+        binding!!.apply {
+            callTime.text = time
+            callername.text = number
         }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    override fun onSliderMoveLeft() {
+        OngoingCallObject.hangup()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    override fun onSliderMoveRight() {
+        OngoingCallObject.answer()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    override fun onSliderLongPress() {
+
+
     }
 
 }

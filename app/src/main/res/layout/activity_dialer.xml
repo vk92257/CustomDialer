@@ -4,21 +4,83 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/black"
     tools:context=".DialerActivity">
 
     <EditText
-        android:text="7009963340"
         android:id="@+id/etNumber"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Tel number"/>
+        android:hint="Tel number"
+        android:text="7009963340" />
 
     <Button
         android:id="@+id/btnCall"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@+id/etNumber"
         android:layout_marginTop="8dp"
-        android:text="CallActivity"
-        android:layout_below="@+id/etNumber" />
+        android:text="CallActivity" />
+
+
+    <!--
+        <com.example.myapplication.CallSliderView
+            android:id="@+id/slider_view"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:layout_alignParentBottom="true"
+            android:layout_centerInParent="true"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="24dp"
+            android:layout_marginBottom="30dp"
+            android:visibility="visible"
+            app:CallSliderView_Left_BackgroundColor="@color/green"
+            app:CallSliderView_Left_Text=""
+            app:CallSliderView_Right_Text=""
+            app:CallSliderView_progressBackgroundColor="@color/white"
+            app:CallSliderView_text="call"
+            app:CallSliderView_textSize="20sp" />
+    -->
+
+
+    <com.example.myapplication.customView.TwowaySliderView
+        android:id="@+id/sliderControlCostomized"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_below="@+id/btnCall"
+        android:layout_marginTop="50dp"
+        app:cornerRadiusX="15dp"
+        app:cornerRadiusY="15dp"
+        app:fillCircle="true"
+        app:sliderBackgroundColor="@android:color/transparent"
+        app:leftImage="@mipmap/ic_launcher"
+        app:rightImage="@mipmap/ic_launcher"
+        app:sliderColor="@color/green"
+        app:sliderImage="@drawable/ic_add_call" />
+
+    <FrameLayout
+        android:id="@+id/root"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="100dp"
+        android:background="@color/pink"
+        android:visibility="gone">
+
+
+        <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/animation_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:visibility="gone"
+            app:lottie_autoPlay="true"
+            app:lottie_loop="true"
+            app:lottie_rawRes="@raw/in_comming_call" />
+
+
+    </FrameLayout>
+
 
 </RelativeLayout>
